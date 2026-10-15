@@ -144,7 +144,7 @@ def main():
         "let cur = null, frame = $(\"frame\");")
     # Tell people when this app can't save favorites/recents
     html = patch(html, "load().then(() => {",
-        "if (window.GNL_NO_SAVE) setTimeout(() => { $(\"count\").title = \"This app can't save: favorites and recents reset when you close it. Open the file in a browser to keep them.\"; $(\"count\").textContent += \" · not saving\"; }, 0);\n"
+        "if (window.GNL_NO_SAVE) setTimeout(() => { $(\"count\").title = \"This app can't save: favorites and recents reset when you close it. Open the file in a browser to keep them.\"; }, 0);\n"
         "load().then(() => {")
     # When saving is blocked, the count line above is rewritten by refresh(); keep the note
     html = patch(html,

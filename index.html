@@ -347,7 +347,7 @@ function key(e) {
 addEventListener("keydown", key, true);
 setInterval(() => { try { const d = frame.contentDocument; if (d && !d.__k) { d.__k = 1; d.addEventListener("keydown", key, true); } } catch {} }, 1000);
 
-if (window.GNL_NO_SAVE) setTimeout(() => { $("count").title = "This app can't save: favorites and recents reset when you close it. Open the file in a browser to keep them."; $("count").textContent += " · not saving"; }, 0);
+if (window.GNL_NO_SAVE) setTimeout(() => { $("count").title = "This app can't save: favorites and recents reset when you close it. Open the file in a browser to keep them."; }, 0);
 load().then(() => {
   const id = location.hash.slice(1);
   if (id) open(all.find(z => z.id === id));
