@@ -151,6 +151,34 @@ def main():
         '$("count").textContent = view.length.toLocaleString() + " games";',
         '$("count").textContent = view.length.toLocaleString() + " games" + (window.GNL_NO_SAVE ? " · not saving" : "");')
 
+    # ── Saved settings ─────────────────────────────────────────────────────
+    # Chrome gives every file opened from disk the same storage, so settings
+    # saved by another copy (or someone's own GN Light-based page) could leak in:
+    # a source that isn't in the list filtered out every game ("No games match").
+    # Use our own key prefix, and only accept values that make sense.
+    html = patch(html, 'localStorage.getItem("gnl-" + k)', 'localStorage.getItem("gnls-" + k)')
+    html = patch(html, 'localStorage.setItem("gnl-" + k, JSON.stringify(v))', 'localStorage.setItem("gnls-" + k, JSON.stringify(v))')
+    html = patch(html,
+        'let favs = new Set(LS.get("favs", [])), recent = LS.get("recent", []);',
+        'const arr = v => Array.isArray(v) ? v.map(String) : [];\n'
+        'let favs = new Set(arr(LS.get("favs", []))), recent = arr(LS.get("recent", []));')
+    html = patch(html,
+        'src.value = LS.get("src", "all"); sort.value = LS.get("sort", "az");',
+        'src.value = LS.get("src", "all"); sort.value = LS.get("sort", "az");\n'
+        'if (!src.value) src.value = "all";\n'
+        'if (!sort.value) sort.value = "az";')
+    # Say why the list is empty, with a way back to all games
+    html = patch(html, '<p id="empty">No games match.</p>',
+        '<p id="empty"><span id="emptyText">No games match.</span> <button id="showAll" type="button">Show all games</button></p>')
+    html = patch(html,
+        '  $("empty").style.display = view.length ? "none" : "block";',
+        '  $("empty").style.display = view.length ? "none" : "block";\n'
+        '  if (!view.length) $("emptyText").textContent = !all.length ? "The game list didn\'t load." : s ? "No games match \\u201c" + q.value.trim() + "\\u201d." : mode === "fav" ? "No favorites yet. Tap \\u2606 in a game to add one." : mode === "recent" ? "No games played yet." : "No games match.";\n'
+        '  $("showAll").hidden = !all.length || (!s && mode === "all");')
+    html = patch(html, "load().then(() => {",
+        '$("showAll").onclick = () => { q.value = ""; src.value = "all"; LS.set("src", "all"); refresh(); };\n'
+        "load().then(() => {")
+
     # Opened from a file the game frame has no real origin, so "gamepad" (which
     # means "this frame's own origin") doesn't match it and Unity games crash
     # when they look for controllers. "*" allows it wherever the page runs.

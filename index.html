@@ -78,7 +78,7 @@ footer a{color:inherit}
   <span id="count">Loading…</span>
 </header>
 <main id="grid" aria-live="polite"></main>
-<p id="empty">No games match.</p>
+<p id="empty"><span id="emptyText">No games match.</span> <button id="showAll" type="button">Show all games</button></p>
 <div id="player" role="dialog" aria-label="Game">
   <div id="bar">
     <b id="title"></b>
@@ -111,8 +111,8 @@ const OG = ["SCHSwork", "GN-originals", "main"];
 const LIB = "48c0631289237dd2e9e202fde532edfae4ed2acf";
 const BAD = [/data-r=["']c7a94e["']/i, /xa0f20fba9693cbb2c66516f1/, /__gnGameAd/];
 const LS = {
-  get(k, d) { try { const v = localStorage.getItem("gnl-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem("gnl-" + k, JSON.stringify(v)); } catch {} }
+  get(k, d) { try { const v = localStorage.getItem("gnls-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("gnls-" + k, JSON.stringify(v)); } catch {} }
 };
 async function first(list, as = "json", ms = 12000) {
   let err;
@@ -134,10 +134,13 @@ const THUMBS = JSON.parse(document.getElementById("gnl-thumbs").textContent);
 
 // ── State ────────────────────────────────────────────────────────────────────
 let all = [], view = [];
-let favs = new Set(LS.get("favs", [])), recent = LS.get("recent", []);
+const arr = v => Array.isArray(v) ? v.map(String) : [];
+let favs = new Set(arr(LS.get("favs", []))), recent = arr(LS.get("recent", []));
 const $ = id => document.getElementById(id);
 const grid = $("grid"), q = $("q"), src = $("src"), sort = $("sort");
 src.value = LS.get("src", "all"); sort.value = LS.get("sort", "az");
+if (!src.value) src.value = "all";
+if (!sort.value) sort.value = "az";
 const norm = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 // games.json rows: [id, name, kind, file, hasThumb, cover?]. Built daily by tools/build.py.
@@ -174,6 +177,8 @@ function refresh() {
   view = list;
   $("count").textContent = view.length.toLocaleString() + " games" + (window.GNL_NO_SAVE ? " · not saving" : "");
   $("empty").style.display = view.length ? "none" : "block";
+  if (!view.length) $("emptyText").textContent = !all.length ? "The game list didn't load." : s ? "No games match \u201c" + q.value.trim() + "\u201d." : mode === "fav" ? "No favorites yet. Tap \u2606 in a game to add one." : mode === "recent" ? "No games played yet." : "No games match.";
+  $("showAll").hidden = !all.length || (!s && mode === "all");
   layout(true);
 }
 function loose(k, s) {
@@ -348,6 +353,7 @@ addEventListener("keydown", key, true);
 setInterval(() => { try { const d = frame.contentDocument; if (d && !d.__k) { d.__k = 1; d.addEventListener("keydown", key, true); } } catch {} }, 1000);
 
 if (window.GNL_NO_SAVE) setTimeout(() => { $("count").title = "This app can't save: favorites and recents reset when you close it. Open the file in a browser to keep them."; }, 0);
+$("showAll").onclick = () => { q.value = ""; src.value = "all"; LS.set("src", "all"); refresh(); };
 load().then(() => {
   const id = location.hash.slice(1);
   if (id) open(all.find(z => z.id === id));
